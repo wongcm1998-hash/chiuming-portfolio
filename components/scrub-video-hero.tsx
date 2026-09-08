@@ -45,6 +45,7 @@ export function ScrubVideoHero() {
     let lastSeekAt = -Infinity;
     let intersectsViewport = false;
     let metadataLoaded = false;
+    let initialFrameSet = false;
     let observer: IntersectionObserver | null = null;
 
     const isViewportActive = () =>
@@ -58,13 +59,12 @@ export function ScrubVideoHero() {
     };
 
     const releasePointer = () => {
-      if (
-        activePointerId !== null &&
-        hero.hasPointerCapture(activePointerId)
-      ) {
-        hero.releasePointerCapture(activePointerId);
-      }
+      const pointerId = activePointerId;
       activePointerId = null;
+
+      if (pointerId !== null && hero.hasPointerCapture(pointerId)) {
+        hero.releasePointerCapture(pointerId);
+      }
       hero.dataset.scrubbing = 'false';
     };
 
@@ -88,8 +88,13 @@ export function ScrubVideoHero() {
       const seekIntervalElapsed = timestamp - lastSeekAt >= SEEK_INTERVAL_MS;
 
       if (farFromTarget && !video.seeking && seekIntervalElapsed) {
-        video.currentTime = safeTarget;
-        lastSeekAt = timestamp;
+        try {
+          video.currentTime = safeTarget;
+          lastSeekAt = timestamp;
+        } catch {
+          targetTime = null;
+          return;
+        }
       }
 
       const stillNeedsWork =
@@ -130,8 +135,7 @@ export function ScrubVideoHero() {
       scheduleAnimationLoop();
     };
 
-    const readDurationAfterMetadata = () => {
-      metadataLoaded = true;
+    const syncDuration = (initializeFrame: boolean) => {
       video.pause();
 
       if (!isUsableDuration(video.duration)) {
@@ -143,18 +147,33 @@ export function ScrubVideoHero() {
       }
 
       duration = video.duration;
-      const initialTime = Math.min(
-        INITIAL_FRAME_TIME,
-        Math.max(0, duration - 0.001),
-      );
-      video.currentTime = initialTime;
+
+      if (initializeFrame && !initialFrameSet) {
+        const initialTime = Math.min(
+          INITIAL_FRAME_TIME,
+          Math.max(0, duration - 0.001),
+        );
+
+        try {
+          video.currentTime = initialTime;
+          initialFrameSet = true;
+        } catch {
+          // A valid poster remains visible if an engine rejects the initial seek.
+        }
+      }
+
       hero.dataset.ready = 'true';
       percentage.value = '0%';
       time.value = `0:00 / ${formatTime(duration)}`;
     };
 
+    const readDurationAfterMetadata = () => {
+      metadataLoaded = true;
+      syncDuration(true);
+    };
+
     const handleDurationChange = () => {
-      if (metadataLoaded) readDurationAfterMetadata();
+      if (metadataLoaded) syncDuration(!initialFrameSet);
     };
 
     const handleVideoError = () => {
@@ -167,7 +186,14 @@ export function ScrubVideoHero() {
     };
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!isViewportActive() || duration === null) return;
+      if (
+        !event.isPrimary ||
+        activePointerId !== null ||
+        !isViewportActive() ||
+        duration === null
+      ) {
+        return;
+      }
 
       activePointerId = event.pointerId;
       hero.dataset.scrubbing = 'true';
@@ -200,6 +226,14 @@ export function ScrubVideoHero() {
     };
 
     const handlePointerLeave = (event: PointerEvent) => {
+      if (
+        activePointerId === event.pointerId &&
+        !hero.hasPointerCapture(event.pointerId)
+      ) {
+        stopInteraction();
+        return;
+      }
+
       if (event.pointerType === 'mouse' && activePointerId === null) {
         targetTime = null;
         cancelAnimationLoop();
@@ -207,7 +241,12 @@ export function ScrubVideoHero() {
     };
 
     const handleLostPointerCapture = (event: PointerEvent) => {
-      if (activePointerId === event.pointerId) releasePointer();
+      if (activePointerId !== event.pointerId) return;
+
+      activePointerId = null;
+      hero.dataset.scrubbing = 'false';
+      targetTime = null;
+      cancelAnimationLoop();
     };
 
     const handleVisibilityChange = () => {
