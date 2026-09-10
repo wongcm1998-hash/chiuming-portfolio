@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Inter } from 'next/font/google';
 import './globals.css';
 
 const geistSans = Geist({
@@ -12,8 +12,13 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+const inter = Inter({
+  variable: '--font-inter',
+  subsets: ['latin'],
+});
+
 const siteUrl = new URL('https://move-to-turn-time.wongchiu1016.chatgpt.site');
-const socialImageUrl = new URL('/og.png', siteUrl).toString();
+const socialImageUrl = new URL('/og.jpg', siteUrl).toString();
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
@@ -48,7 +53,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body
-        className={`${geistSans.variable} ${geistMono.variable}`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable}`}
       >
         {children}
       </body>

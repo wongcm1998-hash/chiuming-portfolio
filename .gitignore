@@ -38,3 +38,6 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# local source-media backups (not part of the website build)
+/media-originals/
