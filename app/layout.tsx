@@ -17,7 +17,7 @@ const inter = Inter({
   subsets: ['latin'],
 });
 
-const siteUrl = new URL('https://move-to-turn-time.wongchiu1016.chatgpt.site');
+const siteUrl = new URL('https://chillman.dpdns.org');
 const socialImageUrl = new URL('/og.jpg', siteUrl).toString();
 
 export const metadata: Metadata = {
