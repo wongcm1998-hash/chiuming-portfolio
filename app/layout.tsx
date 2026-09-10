@@ -22,10 +22,10 @@ const socialImageUrl = new URL('/og.jpg', siteUrl).toString();
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
-  title: 'Move to Turn Time — Interactive Portrait',
+  title: 'CHIUMING’s Portfolio',
   description: '横向移动或拖动，以位置控制人物转头视频的时间。',
   openGraph: {
-    title: 'Move to Turn Time — Interactive Portrait',
+    title: 'CHIUMING’s Portfolio',
     description: '横向位置，决定画面。',
     url: siteUrl,
     images: [
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Move to Turn Time — Interactive Portrait',
+    title: 'CHIUMING’s Portfolio',
     description: '横向位置，决定画面。',
     images: [socialImageUrl],
   },
