@@ -730,6 +730,7 @@ function WorkCard({
 }
 
 export function SelectedWorks() {
+  const pageRef = useRef<HTMLElement>(null);
   const [activeFilter, setActiveFilter] = useState<WorkFilter>('全部');
   const [projectOrientations, setProjectOrientations] = useState<
     Record<string, WorkOrientation>
@@ -745,6 +746,70 @@ export function SelectedWorks() {
     },
     [],
   );
+
+  useEffect(() => {
+    const page = pageRef.current;
+    if (!page) return;
+
+    let frameId: number | null = null;
+
+    const clampProgress = (value: number) => Math.min(Math.max(value, 0), 1);
+    const smoothstep = (value: number) => value * value * (3 - 2 * value);
+    const rangeProgress = (value: number, start: number, end: number) =>
+      smoothstep(clampProgress((value - start) / (end - start)));
+
+    const syncTransition = () => {
+      frameId = null;
+
+      const viewportHeight =
+        window.visualViewport?.height ?? window.innerHeight;
+      if (!Number.isFinite(viewportHeight) || viewportHeight <= 0) return;
+
+      const rect = page.getBoundingClientRect();
+      const progress = clampProgress(
+        (viewportHeight - rect.top) / viewportHeight,
+      );
+      const copyReveal = rangeProgress(progress, 0.28, 0.82);
+      const featuredReveal = rangeProgress(progress, 0.14, 0.76);
+      const edgeOpacity = Math.min(progress * 5, (1 - progress) * 7, 1);
+
+      page.style.setProperty('--works-overlap-height', `${viewportHeight}px`);
+      page.style.setProperty('--works-transition-progress', String(progress));
+      page.style.setProperty('--works-copy-reveal', String(copyReveal));
+      page.style.setProperty('--works-featured-reveal', String(featuredReveal));
+      page.style.setProperty(
+        '--works-edge-opacity',
+        String(Math.max(edgeOpacity, 0)),
+      );
+    };
+
+    const scheduleTransitionSync = () => {
+      if (frameId === null) {
+        frameId = requestAnimationFrame(syncTransition);
+      }
+    };
+
+    const handlePageShow = () => scheduleTransitionSync();
+
+    window.addEventListener('scroll', scheduleTransitionSync, { passive: true });
+    window.addEventListener('resize', scheduleTransitionSync, { passive: true });
+    window.addEventListener('pageshow', handlePageShow);
+    window.visualViewport?.addEventListener('resize', scheduleTransitionSync, {
+      passive: true,
+    });
+    syncTransition();
+
+    return () => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', scheduleTransitionSync);
+      window.removeEventListener('resize', scheduleTransitionSync);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.visualViewport?.removeEventListener(
+        'resize',
+        scheduleTransitionSync,
+      );
+    };
+  }, []);
 
   const visibleProjects = useMemo(
     () =>
@@ -774,7 +839,7 @@ export function SelectedWorks() {
   }, [activeFilter, projectOrientations, visibleProjects]);
 
   return (
-    <section className="works-page" aria-label="视频作品">
+    <section ref={pageRef} className="works-page" aria-label="视频作品">
       <section className="works-hero" aria-labelledby="works-title">
         <div className="works-hero-copy">
           <p className="works-kicker">SELECTED WORKS</p>

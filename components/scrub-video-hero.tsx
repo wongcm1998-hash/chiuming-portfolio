@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 const SEEK_INTERVAL_MS = 1000 / 25;
 const SEEK_EPSILON = 1 / 120;
 const INITIAL_FRAME_TIME = 0.02;
-const SCROLL_VIEWPORTS = 7;
+const SCROLL_VIEWPORTS = 8;
 
 const TIMELINE = {
   firstCopyRightExit: [0.04, 0.105],
@@ -19,7 +19,8 @@ const TIMELINE = {
   ],
   workExperienceExit: [0.47, 0.54],
   secondToThird: [0.5, 0.57],
-  thirdPlayback: [0.54, 0.96],
+  thirdPlayback: [0.54, 0.84],
+  worksTransition: [1 - 1 / (SCROLL_VIEWPORTS - 1), 1],
   thirdCopyReveal: [
     [0.57, 0.64],
     [0.61, 0.69],
@@ -700,6 +701,27 @@ export function ScrubVideoHero() {
       const workExperienceExit = smoothstep(
         rangeProgress(scrollProgress, TIMELINE.workExperienceExit),
       );
+      const worksTransition = smoothstep(
+        rangeProgress(scrollProgress, TIMELINE.worksTransition),
+      );
+
+      const timelineAudio = bgmRef.current;
+      const bgmShouldPlay = isSectionVisible && worksTransition < 0.999;
+      bgmInSequenceRef.current = bgmShouldPlay;
+
+      if (timelineAudio) {
+        timelineAudio.volume = 0.42 * (1 - worksTransition);
+
+        if (
+          bgmShouldPlay &&
+          bgmEnabledRef.current &&
+          document.visibilityState === 'visible'
+        ) {
+          void timelineAudio.play().catch(() => undefined);
+        } else {
+          timelineAudio.pause();
+        }
+      }
 
       stageVisibilities = [
         1 - firstToSecond,

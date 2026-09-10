@@ -739,7 +739,15 @@ body {
 /* Selected works */
 
 .works-page {
+  --works-overlap-height: 100svh;
+  --works-transition-progress: 1;
+  --works-copy-reveal: 1;
+  --works-featured-reveal: 1;
+  --works-edge-opacity: 0;
+  position: relative;
+  z-index: 20;
   min-height: 100vh;
+  margin-top: calc(-1 * var(--works-overlap-height));
   overflow: hidden;
   background:
     radial-gradient(circle at 82% 9%, rgb(17 43 72 / 38%), transparent 34rem),
@@ -748,7 +756,33 @@ body {
   font-family: 'MiSans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
+.works-page::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 12;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(196 138 74 / 42%) 12%,
+    #c48a4a 50%,
+    rgb(196 138 74 / 42%) 88%,
+    transparent 100%
+  );
+  box-shadow:
+    0 -0.35rem 1.4rem rgb(196 138 74 / 20%),
+    0 0.3rem 1.1rem rgb(196 138 74 / 16%);
+  content: '';
+  opacity: var(--works-edge-opacity);
+  pointer-events: none;
+  transform: scaleX(calc(0.72 + var(--works-transition-progress) * 0.28));
+  transform-origin: center;
+}
+
 .works-hero {
+  position: relative;
   display: grid;
   min-height: 100svh;
   grid-template-columns: minmax(17rem, 30%) minmax(0, 67%);
@@ -759,7 +793,24 @@ body {
 
 .works-hero-copy {
   align-self: start;
+  opacity: var(--works-copy-reveal);
   padding-top: clamp(1rem, 7vh, 5rem);
+  transform: translate3d(
+    0,
+    calc((1 - var(--works-copy-reveal)) * 3.25rem),
+    0
+  );
+}
+
+.works-hero > .work-card {
+  opacity: var(--works-featured-reveal);
+  transform: translate3d(
+      0,
+      calc((1 - var(--works-featured-reveal)) * 4.5rem),
+      0
+    )
+    scale(calc(0.97 + var(--works-featured-reveal) * 0.03));
+  transform-origin: center bottom;
 }
 
 .works-kicker,
@@ -1298,7 +1349,7 @@ a.site-contact-item:focus-visible {
 
 @media (max-width: 980px) {
   .works-hero {
-    min-height: auto;
+    min-height: 100svh;
     grid-template-columns: 1fr;
     gap: 3.5rem;
     padding-top: 5rem;
@@ -1412,6 +1463,20 @@ a.site-contact-item:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .works-page {
+    margin-top: 0;
+  }
+
+  .works-page::before {
+    display: none;
+  }
+
+  .works-hero-copy,
+  .works-hero > .work-card {
+    opacity: 1;
+    transform: none;
+  }
+
   .work-video,
   .work-poster,
   .work-media-controls,
